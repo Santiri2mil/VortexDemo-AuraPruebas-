@@ -33,6 +33,8 @@ public class Player : MonoBehaviour
 
     public int amountOfJump=1;
     private int facingDirection=-1;
+    public int amountofDash=1;
+    public int amountofDashLeft;
 
     public float MoveSpeed = 10.0f;
     public float jumpForce  = 16.0f;
@@ -74,10 +76,13 @@ public class Player : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         amountOfJumpsLeft = amountOfJump;
+        amountofDashLeft = amountofDash;
         WallJumpDirection.Normalize();//Normalize hace que el vector valga 1
     }
     void Update()//Ejecuta los metodos mientras corre
     {
+        float xRaw = Input.GetAxisRaw("Horizontal");
+        float yRaw = Input.GetAxisRaw("Vertical");
         CheckInput();
         CheckMovementDirection();
         UpdateAnimations();
@@ -85,7 +90,7 @@ public class Player : MonoBehaviour
         CheckIfWallSliding();
         CheckJump();
         CheckLedgeClimb();
-        ChechDash();
+        ChechDash(xRaw,yRaw);
     }
     private void FixedUpdate()
     {
@@ -246,9 +251,13 @@ public class Player : MonoBehaviour
             CheckJumpMult = false;
             rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * JUMPHigthMult);
         }
+        if(isGrounded)
+        {
+            amountofDashLeft = 1;
+        }
         if(Input.GetButtonDown("Dash"))
         {
-            if(Time.time>=(lastDash+dashCooldown))
+            if(Time.time>=(lastDash+dashCooldown)&&amountofDashLeft>0)
             {
                 AttemptToDash();
             }
@@ -260,8 +269,12 @@ public class Player : MonoBehaviour
         isDashing = true;
         dashTimeleft = DashTime;
         lastDash = Time.time;
+        if(!isGrounded)
+        {
+            amountofDashLeft--;
+        }
     }
-    private void ChechDash()
+    private void ChechDash(float x,float y)
     {
         if(dashTimeleft>0)
         {
@@ -269,7 +282,13 @@ public class Player : MonoBehaviour
             {
                 canFlip = false;
                 canMove = false;
-                rb.velocity = new Vector2(DashSpeed * facingDirection, -1);
+
+                rb.velocity = Vector2.zero;
+                Vector2 dir = new Vector2(x, y);
+
+                rb.velocity += dir.normalized * DashSpeed;
+
+
                 dashTimeleft -= Time.deltaTime;
             }
         }
