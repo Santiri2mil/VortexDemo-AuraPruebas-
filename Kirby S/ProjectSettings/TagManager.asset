@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Ground
   - Enemy
+  - Plataform
   layers:
   - Default
   - TransparentFX
@@ -19,7 +20,7 @@ TagManager:
   - Damgeable
   - Dead
   - Player
-  - 
+  - Plataform
   - 
   - 
   - 
@@ -55,9 +56,9 @@ TagManager:
   - name: Pltaform
     uniqueID: 362814655
     locked: 0
-  - name: Player
-    uniqueID: 228687875
-    locked: 0
   - name: Enemy
     uniqueID: 3766819093
+    locked: 0
+  - name: Player
+    uniqueID: 228687875
     locked: 0

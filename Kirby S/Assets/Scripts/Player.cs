@@ -27,9 +27,12 @@ public class Player : MonoBehaviour
     private bool canClimbledge=false;
     private bool ledgeDetected;
     private bool isDashing;
+    private bool isinPlataform;
+
 
     private Rigidbody2D rb;
     private Animator anim;
+
 
     public int amountOfJump=1;
     private int facingDirection=-1;
@@ -67,8 +70,12 @@ public class Player : MonoBehaviour
     public Transform groundCheck;
     public Transform WallCheck;
     public Transform ledgeCheck;
+   
+
 
     public LayerMask whatIsGround;
+    public LayerMask isaPlataform;
+    
 
     // Start is called before the first frame update
     void Start()
@@ -78,6 +85,7 @@ public class Player : MonoBehaviour
         amountOfJumpsLeft = amountOfJump;
         amountofDashLeft = amountofDash;
         WallJumpDirection.Normalize();//Normalize hace que el vector valga 1
+      
     }
     void Update()//Ejecuta los metodos mientras corre
     {
@@ -91,14 +99,17 @@ public class Player : MonoBehaviour
         CheckJump();
         CheckLedgeClimb();
         ChechDash(xRaw,yRaw);
+        
     }
     private void FixedUpdate()
     {
         ApplyMovement();
         CheckSurroundings();
+        
     }
     private void CheckSurroundings()//Funciones que Detectan los alrdedores
     {
+       isinPlataform = Physics2D.OverlapCircle(groundCheck.position, groundcheckRadius, isaPlataform);
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundcheckRadius, whatIsGround);
         isTouchingWall = Physics2D.Raycast(WallCheck.position, transform.right, wallCheckDistance, whatIsGround);
         isTouchingLedge = Physics2D.Raycast(ledgeCheck.position, transform.right, wallCheckDistance, whatIsGround);
@@ -107,7 +118,8 @@ public class Player : MonoBehaviour
             ledgeDetected = true;
             ledgePosBot = WallCheck.position;
         }
-
+     
+        
     }
     private void CheckIfWallSliding()//logica para permitir el deslice de pared
     {
@@ -124,7 +136,7 @@ public class Player : MonoBehaviour
     }
     private void CheckLedgeClimb()
     {
-        if(ledgeDetected && !canClimbledge)
+        if(ledgeDetected && !canClimbledge&&!isinPlataform)
         {
             canClimbledge = true;
             if(isFacingRight)
@@ -186,7 +198,7 @@ public class Player : MonoBehaviour
         {
             Flip();
         }
-        if (Mathf.Abs(rb.velocity.x)>=0.01f)
+        if (Mathf.Abs(rb.velocity.x)>=0.001f)
         {
             isWalking = true;
         }
@@ -230,7 +242,7 @@ public class Player : MonoBehaviour
                 canFlip = false;
                 turnTimer = TurnTimerSet;
             }
-            else if(isGrounded && isTouchingWall)
+            else if(isGrounded||isinPlataform && isTouchingWall)
             {
                 canMove = true;
                 canFlip = true;
@@ -260,9 +272,11 @@ public class Player : MonoBehaviour
             if(Time.time>=(lastDash+dashCooldown)&&amountofDashLeft>0)
             {
                 AttemptToDash();
+                createDust();
             }
             
         }
+       
     }
     private void AttemptToDash()
     {
@@ -285,7 +299,7 @@ public class Player : MonoBehaviour
 
                 rb.velocity = Vector2.zero;
                 Vector2 dir = new Vector2(x, y);
-
+                
                 rb.velocity += dir.normalized * DashSpeed;
 
 
@@ -330,6 +344,10 @@ public class Player : MonoBehaviour
             CheckJumpMult = true;
             canFlip = true;
             canMove = true;
+            if(!isGrounded)
+            {
+                amountOfJumpsLeft--;
+            }
         }
     }
     private void WallJump()
@@ -371,6 +389,7 @@ public class Player : MonoBehaviour
             }
         }
     }
+
     public void DisableFlip()
     {
         canFlip = false;
@@ -379,6 +398,15 @@ public class Player : MonoBehaviour
     {
         canFlip = true;
     }
+    public void DisableMove()
+    {
+        canMove = false;
+    }
+    public void EnableMove()
+    {
+        canMove = true;
+    }
+    //Habilitar movimiento del jugador
     private void Flip()//Voltea los sprites
     {
         if(!isWallSliding && canFlip)
@@ -394,11 +422,42 @@ public class Player : MonoBehaviour
         }
         
     }
+
+    
     private void OnDrawGizmos()//Dibuja los detectores
     {
         Gizmos.DrawWireSphere(groundCheck.position, groundcheckRadius);
         Gizmos.DrawLine(WallCheck.position, new Vector3(WallCheck.position.x + wallCheckDistance, WallCheck.position.y, WallCheck.position.z));
         Gizmos.DrawLine(ledgeCheck.position, new Vector3(ledgeCheck.position.x + wallCheckDistance, ledgeCheck.position.y, ledgeCheck.position.z));
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == "Plataform")
+        {
+            rb.velocity = new Vector3(0f, 0f, 0f);
+            isGrounded = true;
+            isinPlataform = true;
+            transform.parent = collision.transform;
+            
+        }
+    }
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == "Plataform")
+        {
+            isinPlataform = true;
+            isGrounded = true;
+            transform.parent = collision.transform;
+            
+        }
+    }
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == "Plataform")
+        {
+            isinPlataform = false;
+            transform.parent = null;
+        }
     }
     void createDust ()
     {
@@ -409,4 +468,5 @@ public class Player : MonoBehaviour
     {
         return facingDirection;
     }
+
 }
